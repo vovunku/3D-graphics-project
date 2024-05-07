@@ -1,5 +1,5 @@
 #include "scene.hpp"
-
+#include <GLFW/glfw3.h>
 
 using namespace cgp;
 
@@ -65,12 +65,32 @@ void scene_structure::initialize()
 	cube1.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/wood.jpg");
 
 	cube2 = cube1;
-
+	mesh_drawable cylinder_base;
+	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 1.0f,0,0 }, { 1.0f,0,0.5f }));
+	mesh_drawable sphere;
+	sphere.initialize_data_on_gpu(mesh_primitive_sphere(0.1f));
+	hierarchy.add(cylinder_base, "Cylinder base");
+	hierarchy.add(sphere, "Sphere", "Cylinder base", {1.0f,0,0.6f}); // the translation is used to place the sphere at the extremity of the cylinder
+	char_pos={0,0,0};
+	char_vel={0.0f,0,0.0f};
 }
 
 
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
+
+void scene_structure::simulation_step(float dt)
+{
+	//vec3 g = { 0,0,-9.81f }; // gravity
+	char_vel.at(2) -= dt * 9.81;
+	for (int i=0;i<3;i++){
+	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
+	}
+	if (char_pos.at(2)<0){
+		char_pos.at(2)=0;
+		char_vel={0,0,0};
+	}
+}
 void scene_structure::display_frame()
 {
 
@@ -79,17 +99,22 @@ void scene_structure::display_frame()
 
 	// Update time
 	timer.update();
-
+	//glfwSetKeyCallback(window.glfw_window, key_callback);
+	simulation_step(timer.scale * 0.01f);
 	// conditional display of the global frame (set via the GUI)
+	hierarchy["Cylinder base"].transform_local.translation = char_pos;
+	
 	if (gui.display_frame)
 		draw(global_frame, environment);
-	
 
 	// Draw all the shapes
 	draw(terrain, environment);
 	draw(water, environment);
 	draw(tree, environment);
 	draw(cube1, environment);
+	hierarchy.update_local_to_global_coordinates();
+	draw(hierarchy, environment);
+
 
 	// Animate the second cube in the water
 	cube2.model.translation = { -1.0f, 6.0f+0.1*sin(0.5f*timer.t), -0.8f + 0.1f * cos(0.5f * timer.t)};
