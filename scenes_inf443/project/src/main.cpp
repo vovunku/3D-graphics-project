@@ -260,14 +260,16 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 
 		}
 		if (action == GLFW_PRESS) {
+			if (scene.char_vel.at(2)==0){
         	scene.state.pressed = true;
-        	scene.state.press_time = glfwGetTime();
+        	scene.state.press_time = glfwGetTime();}
 		}
 		if (action == GLFW_RELEASE) {
+			if (scene.state.pressed){
         	scene.state.pressed = false;
         	scene.state.release_time = glfwGetTime();
 			scene.char_vel.at(2)+=10.0f*(scene.state.release_time-scene.state.press_time);
-			scene.char_vel.at(1)+=3.0f*(scene.state.release_time-scene.state.press_time);
+			scene.char_vel.at(1)+=3.0f*(scene.state.release_time-scene.state.press_time);}
 	}
 	}
 

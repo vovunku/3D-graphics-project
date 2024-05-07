@@ -66,11 +66,11 @@ void scene_structure::initialize()
 
 	cube2 = cube1;
 	mesh_drawable cylinder_base;
-	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 1.0f,0,0 }, { 1.0f,0,0.5f }));
+	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 0,0,-0.25 }, { 0,0,0.25f }));
 	mesh_drawable sphere;
 	sphere.initialize_data_on_gpu(mesh_primitive_sphere(0.1f));
 	hierarchy.add(cylinder_base, "Cylinder base");
-	hierarchy.add(sphere, "Sphere", "Cylinder base", {1.0f,0,0.6f}); // the translation is used to place the sphere at the extremity of the cylinder
+	hierarchy.add(sphere, "Sphere", "Cylinder base", {0.0f,0,0.35f}); // the translation is used to place the sphere at the extremity of the cylinder
 	char_pos={0,0,0};
 	char_vel={0.0f,0,0.0f};
 }
@@ -86,6 +86,7 @@ void scene_structure::simulation_step(float dt)
 	for (int i=0;i<3;i++){
 	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
 	}
+	
 	if (char_pos.at(2)<0){
 		char_pos.at(2)=0;
 		char_vel={0,0,0};
@@ -96,14 +97,26 @@ void scene_structure::display_frame()
 
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
-
+	const vec3 vert={0,0,0.25f};
 	// Update time
 	timer.update();
 	//glfwSetKeyCallback(window.glfw_window, key_callback);
 	simulation_step(timer.scale * 0.01f);
 	// conditional display of the global frame (set via the GUI)
-	hierarchy["Cylinder base"].transform_local.translation = char_pos;
-	
+	hierarchy["Cylinder base"].transform_local.translation = char_pos+vert;
+	if (state.pressed){
+		//hierarchy["Cylinder base"].transform_local.scaling = 1-0.3*(timer.t-state.press_time);
+		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1+0.1*(timer.t-state.press_time),1.0f,1-0.3*(timer.t-state.press_time)};
+		hierarchy["Sphere"].drawable.model.translation={0,0,-0.4*0.3*(timer.t-state.press_time)};
+	}
+	else{
+		//hierarchy["Cylinder base"].transform_local.scaling = 1;
+		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1.0f,1.0f,1.0f};
+		hierarchy["Sphere"].drawable.model.translation={0,0,0};
+	}
+	if (char_vel.at(2)!=0){
+		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle({ -1,0,0}, 1.44*(timer.t-state.press_time)/(state.release_time-state.press_time));
+	}
 	if (gui.display_frame)
 		draw(global_frame, environment);
 

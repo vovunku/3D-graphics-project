@@ -61,7 +61,6 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void initialize();    // Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
-	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	void simulation_step(float dt);
 	void mouse_move_event();
 	void mouse_click_event();
