@@ -60,8 +60,8 @@ void scene_structure::initialize()
 	tree.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/palm_tree/palm_tree.jpg", GL_REPEAT, GL_REPEAT);
 
 	cube1.initialize_data_on_gpu(mesh_primitive_cube({ 0,0,0 }, 0.5f));
-	cube1.model.rotation = rotation_transform::from_axis_angle({ -1,1,0 }, Pi / 7.0f);
-	cube1.model.translation = { 1.0f,1.0f,-0.1f };
+	// cube1.model.rotation = rotation_transform::from_axis_angle({ -1,1,0 }, Pi / 7.0f);
+	// cube1.model.translation = { 1.0f,1.0f,-0.1f };
 	cube1.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/wood.jpg");
 
 	cube2 = cube1;
@@ -79,18 +79,26 @@ void scene_structure::initialize()
 // This function is called permanently at every new frame
 // Note that you should avoid having costly computation and large allocation defined there. This function is mostly used to call the draw() functions on pre-existing data.
 
-void scene_structure::simulation_step(float dt)
-{
+void move_obj(cgp::vec3& pos, cgp::vec3& vel, float dt) {
 	//vec3 g = { 0,0,-9.81f }; // gravity
-	char_vel.at(2) -= dt * 9.81;
+	vel.at(2) -= dt * 9.81;
 	for (int i=0;i<3;i++){
-	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
+	    pos.at(i) = pos.at(i) + dt * vel.at(i);
 	}
-	if (char_pos.at(2)<0){
-		char_pos.at(2)=0;
-		char_vel={0,0,0};
+	if (pos.at(2)<0){
+		pos.at(2)=0;
+		vel={0,0,0};
 	}
 }
+
+void scene_structure::simulation_step(float dt)
+{
+	move_obj(char_pos, char_vel, dt);
+	if (cubes.size() > 0) {
+		move_obj(cubes.back().pos, cubes.back().vel, dt);
+	}
+}
+
 void scene_structure::display_frame()
 {
 
@@ -114,6 +122,15 @@ void scene_structure::display_frame()
 	draw(cube1, environment);
 	hierarchy.update_local_to_global_coordinates();
 	draw(hierarchy, environment);
+
+	if (char_mooving && char_pos.at(2) == 0) {
+		char_mooving = false;
+		drop_cube();
+	}
+	for (auto& cube : cubes) {
+		cube.mesh.model.translation = cube.pos;
+		draw(cube.mesh, environment);
+	}
 
 
 	// Animate the second cube in the water
@@ -163,3 +180,13 @@ void scene_structure::idle_frame()
 	camera_control.idle_frame(environment.camera_view);
 }
 
+void scene_structure::drop_cube()
+{
+	vec3 pos = char_pos;
+	pos.at(1) += 2;
+	pos.at(2) += 1;
+    cubes.push_back({cube1, pos, vec3{0, 0, 0}});
+	if (cubes.size() > 10) {
+		cubes.pop_front();
+	}
+}

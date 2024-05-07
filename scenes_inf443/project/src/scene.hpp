@@ -3,6 +3,7 @@
 
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
+#include <deque>
 
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
 using cgp::mesh;
@@ -21,6 +22,12 @@ struct KeyState {
     bool pressed;
     double press_time;
     double release_time;
+};
+
+struct Obj {
+	mesh_drawable mesh;
+	vec3 pos;
+	vec3 vel;
 };
 
 // The structure of the custom scene
@@ -53,6 +60,9 @@ struct scene_structure : cgp::scene_inputs_generic {
 	struct KeyState state;
 	vec3 char_pos;
 	vec3 char_vel;
+	bool char_mooving = false;
+
+	std::deque<Obj> cubes;
 	
 	// ****************************** //
 	// Functions
@@ -67,7 +77,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void mouse_click_event();
 	void keyboard_event();
 	void idle_frame();
-
+	
+	void drop_cube();
 };
 
 
