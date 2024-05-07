@@ -268,6 +268,7 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
         	scene.state.release_time = glfwGetTime();
 			scene.char_vel.at(2)+=10.0f*(scene.state.release_time-scene.state.press_time);
 			scene.char_vel.at(1)+=3.0f*(scene.state.release_time-scene.state.press_time);
+			scene.char_mooving = true;
 	}
 	}
 
