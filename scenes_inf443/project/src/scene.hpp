@@ -21,6 +21,8 @@ struct KeyState {
     bool pressed;
     double press_time;
     double release_time;
+	int coor;
+	int dir;
 };
 
 // The structure of the custom scene
@@ -53,7 +55,10 @@ struct scene_structure : cgp::scene_inputs_generic {
 	struct KeyState state;
 	vec3 char_pos;
 	vec3 char_vel;
-	
+	const double max=5.0f;
+	double v_max;
+	double v_min;
+	vec2 wind;
 	// ****************************** //
 	// Functions
 	// ****************************** //

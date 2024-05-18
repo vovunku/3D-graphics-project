@@ -1,8 +1,11 @@
 #include "scene.hpp"
 #include <GLFW/glfw3.h>
+#include <random>
 
 using namespace cgp;
-
+std::random_device rd;          // Obtain a random seed from the hardware
+std::mt19937 gen(rd());         // Seed the generator
+std::uniform_real_distribution<> dis(0.0, 1.0); // Define the range
 void deform_terrain(mesh& m)
 {
 	// Set the terrain to have a gaussian shape
@@ -73,6 +76,9 @@ void scene_structure::initialize()
 	hierarchy.add(sphere, "Sphere", "Cylinder base", {0.0f,0,0.35f}); // the translation is used to place the sphere at the extremity of the cylinder
 	char_pos={0,0,0};
 	char_vel={0.0f,0,0.0f};
+	wind.at(0)=2*max*dis(gen)-max;
+	wind.at(1)=2*max*dis(gen)-max;
+
 }
 
 
@@ -82,14 +88,17 @@ void scene_structure::initialize()
 void scene_structure::simulation_step(float dt)
 {
 	//vec3 g = { 0,0,-9.81f }; // gravity
-	char_vel.at(2) -= dt * 9.81;
+	if (char_pos.at(2)>0){
+	char_vel.at(2) -= dt * 9.81;}
 	for (int i=0;i<3;i++){
 	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
 	}
-	
+	char_vel.at(state.coor) += wind.at(state.coor) * dt*(char_vel.at(state.coor)-v_min)*(v_max-char_vel.at(state.coor))*char_vel.at(state.coor);
 	if (char_pos.at(2)<0){
 		char_pos.at(2)=0;
 		char_vel={0,0,0};
+		wind.at(0)=2*max*dis(gen)-max;
+		wind.at(1)=2*max*dis(gen)-max;
 	}
 }
 void scene_structure::display_frame()
@@ -115,7 +124,14 @@ void scene_structure::display_frame()
 		hierarchy["Sphere"].drawable.model.translation={0,0,0};
 	}
 	if (char_vel.at(2)!=0){
-		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle({ -1,0,0}, 1.44*(timer.t-state.press_time)/(state.release_time-state.press_time));
+		vec3 rot;
+		if (state.coor==0){
+			rot={0,-1,0};
+		}
+		else {
+			rot={-1,0,0};
+		}
+		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle(rot, state.dir*1.8*(timer.t-state.release_time)/(state.release_time-state.press_time));
 	}
 	if (gui.display_frame)
 		draw(global_frame, environment);
@@ -141,6 +157,7 @@ void scene_structure::display_frame()
 		draw_wireframe(cube1, environment);
 		draw_wireframe(cube2, environment);
 	}
+
 	
 
 
@@ -155,6 +172,8 @@ void scene_structure::display_gui()
 {
 	ImGui::Checkbox("Frame", &gui.display_frame);
 	ImGui::Checkbox("Wireframe", &gui.display_wireframe);
+	ImGui::Text("wind on x-axis %f", wind.at(0));
+	ImGui::Text("wind on y-axis %f", wind.at(1));
 
 }
 
