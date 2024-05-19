@@ -263,21 +263,25 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 			case GLFW_KEY_A:{
 				scene.state.coor=1;
 				scene.state.dir=-1;
+				scene.cubeat=1;
 				break;}
 			case GLFW_KEY_S:
 				{scene.state.coor=0;
 				scene.state.dir=1;
+				scene.cubeat=2;
 				break;}
 				case GLFW_KEY_D:
 				{scene.state.coor=1;
 				scene.state.dir=1;
+				scene.cubeat=3;
 				break;}
 			case GLFW_KEY_W:
 				{scene.state.coor=0;
 				scene.state.dir=-1;
+				scene.cubeat=4;
 				break;}
 			default:
-				{scene.state.coor=-1;
+				{scene.state.coor=0;
 				scene.state.dir=0;
 				break;}
 			}

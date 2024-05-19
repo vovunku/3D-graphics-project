@@ -63,7 +63,7 @@ void scene_structure::initialize()
 	tree.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/palm_tree/palm_tree.jpg", GL_REPEAT, GL_REPEAT);
 
 	cube1.initialize_data_on_gpu(mesh_primitive_cube({ 0,0,0 }, 0.5f));
-	cube1.model.rotation = rotation_transform::from_axis_angle({ -1,1,0 }, Pi / 7.0f);
+	//cube1.model.rotation = rotation_transform::from_axis_angle({ -1,1,0 }, Pi / 7.0f);
 	cube1.model.translation = { 1.0f,1.0f,-0.1f };
 	cube1.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/wood.jpg");
 
@@ -78,6 +78,8 @@ void scene_structure::initialize()
 	char_vel={0.0f,0,0.0f};
 	wind.at(0)=2*max*dis(gen)-max;
 	wind.at(1)=2*max*dis(gen)-max;
+	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
+	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
 
 }
 
@@ -99,6 +101,27 @@ void scene_structure::simulation_step(float dt)
 		char_vel={0,0,0};
 		wind.at(0)=2*max*dis(gen)-max;
 		wind.at(1)=2*max*dis(gen)-max;
+		Obj now=cubes.at(0);
+		if (char_pos.at(1)-now.pos.at(1)<now.size/2&&char_pos.at(1)-now.pos.at(1)>-now.size/2&&char_pos.at(0)-now.pos.at(0)<now.size/2&&char_pos.at(0)-now.pos.at(0)>-now.size/2){
+			streak=1;
+		}
+		else if (cubeat<cubes.size()){
+		Obj c=cubes.at(cubeat);
+		if (char_pos.at(1)-c.pos.at(1)<c.size/2&&char_pos.at(1)-c.pos.at(1)>-c.size/2&&char_pos.at(0)-c.pos.at(0)<c.size/2&&char_pos.at(0)-c.pos.at(0)>-c.size/2){
+			if (char_pos.at(1)-c.pos.at(1)<c.size/4&&char_pos.at(1)-c.pos.at(1)>-c.size/4&&char_pos.at(0)-c.pos.at(0)<c.size/4&&char_pos.at(0)-c.pos.at(0)>-c.size/4){
+				streak+=2;
+			}
+			else{
+				streak=1;
+			}
+		point+=streak;
+		drop_cube();}
+		else{
+			restart();
+		}}
+		else{
+			restart();
+		}
 	}
 }
 void scene_structure::display_frame()
@@ -106,7 +129,7 @@ void scene_structure::display_frame()
 
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
-	const vec3 vert={0,0,0.25f};
+	const vec3 vert={0,0,0.5f};
 	// Update time
 	timer.update();
 	//glfwSetKeyCallback(window.glfw_window, key_callback);
@@ -131,7 +154,7 @@ void scene_structure::display_frame()
 		else {
 			rot={-1,0,0};
 		}
-		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle(rot, state.dir*1.8*(timer.t-state.release_time)/(state.release_time-state.press_time));
+		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle(rot, state.dir*1.85*(timer.t-state.release_time)/(state.release_time-state.press_time));
 	}
 	if (gui.display_frame)
 		draw(global_frame, environment);
@@ -140,22 +163,25 @@ void scene_structure::display_frame()
 	draw(terrain, environment);
 	draw(water, environment);
 	draw(tree, environment);
-	draw(cube1, environment);
+	//draw(cube1, environment);
 	hierarchy.update_local_to_global_coordinates();
 	draw(hierarchy, environment);
-
+	for (auto& cube : cubes) {
+		cube.mesh.model.translation = cube.pos;
+		draw(cube.mesh, environment);
+	}
 
 	// Animate the second cube in the water
-	cube2.model.translation = { -1.0f, 6.0f+0.1*sin(0.5f*timer.t), -0.8f + 0.1f * cos(0.5f * timer.t)};
-	cube2.model.rotation = rotation_transform::from_axis_angle({1,-0.2,0},Pi/12.0f*sin(0.5f*timer.t));
-	draw(cube2, environment);
+	//cube2.model.translation = { -1.0f, 6.0f+0.1*sin(0.5f*timer.t), -0.8f + 0.1f * cos(0.5f * timer.t)};
+	//cube2.model.rotation = rotation_transform::from_axis_angle({1,-0.2,0},Pi/12.0f*sin(0.5f*timer.t));
+	//draw(cube2, environment);
 
 	if (gui.display_wireframe) {
 		draw_wireframe(terrain, environment);
 		draw_wireframe(water, environment);
 		draw_wireframe(tree, environment);
-		draw_wireframe(cube1, environment);
-		draw_wireframe(cube2, environment);
+		//draw_wireframe(cube1, environment);
+		//draw_wireframe(cube2, environment);
 	}
 
 	
@@ -174,6 +200,7 @@ void scene_structure::display_gui()
 	ImGui::Checkbox("Wireframe", &gui.display_wireframe);
 	ImGui::Text("wind on x-axis %f", wind.at(0));
 	ImGui::Text("wind on y-axis %f", wind.at(1));
+	ImGui::Text("Current score %d", point);
 
 }
 
@@ -194,4 +221,36 @@ void scene_structure::idle_frame()
 {
 	camera_control.idle_frame(environment.camera_view);
 }
+void scene_structure::drop_cube()
+{
+	
+	Obj c=cubes.at(cubeat);
+	cubes.clear();
+	cubes.push_back(c);
+	for (int i=0;i<4;i++){
+		vec3 pos = c.pos;
+		double a=dis(gen);
+		if (i==0 || i==3){
+			a=-a;
+		}
+		pos.at((i+1)%2)+=5.0f*a;
+		cubes.push_back({cube1, pos, vec3{0, 0, 0},0.5f});
+		if (dis(gen)<0.25*(i+1)){
+			break;
+		}
+	}
+}
+void scene_structure::restart()
+{
+	streak=1;
+	point=0;
+	char_pos={0,0,0};
+	char_vel={0.0f,0,0.0f};
+	wind.at(0)=2*max*dis(gen)-max;
+	wind.at(1)=2*max*dis(gen)-max;
+	cubes.clear();
+	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
+	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
+}
+
 
