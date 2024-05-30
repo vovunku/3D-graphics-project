@@ -67,6 +67,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	int cubeat;
 	int point=0;
 	int streak=1;
+	int cnt=0;
+	bool playing;
 	// ****************************** //
 	// Functions
 	// ****************************** //
