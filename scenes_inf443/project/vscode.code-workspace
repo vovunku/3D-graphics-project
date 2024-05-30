@@ -35,6 +35,19 @@
 				"trace": true
 			}
 		}]
-	  }
+	},
+	"settings": {
+		"files.associations": {
+			"array": "cpp",
+			"string_view": "cpp",
+			"random": "cpp",
+			"deque": "cpp",
+			"string": "cpp",
+			"vector": "cpp",
+			"*.tcc": "cpp",
+			"unordered_map": "cpp",
+			"system_error": "cpp"
+		}
+	}
 
 }

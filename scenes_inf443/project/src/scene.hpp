@@ -17,6 +17,12 @@ struct gui_parameters {
 	bool display_wireframe = false;
 };
 
+enum BoxType {
+	CUBE,
+	CYLINDER,
+	__FIRST = CUBE,
+   	__LAST = CYLINDER
+};
 struct KeyState {
     bool pressed;
     double press_time;
@@ -55,7 +61,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	mesh_drawable water;
 	mesh_drawable tree;
 	mesh_drawable cube1;
-	mesh_drawable cube2;
+	mesh_drawable cylinder;
 	cgp::hierarchy_mesh_drawable hierarchy;
 	struct KeyState state;
 	vec3 char_pos;
@@ -83,6 +89,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void idle_frame();
 	void drop_cube();
 	void restart();
+	mesh_drawable choose_box();
 };
 
 
