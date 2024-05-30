@@ -23,6 +23,19 @@ void deform_terrain(mesh& m)
 	m.normal_update();
 }
 
+mesh_drawable scene_structure::choose_box() {
+	BoxType t = static_cast<BoxType>(dis(gen) * (BoxType::__LAST + 1));
+
+	switch (t) {
+  	case BoxType::CUBE:
+    	return cube1;
+  	case BoxType::CYLINDER:
+    	return cylinder;
+  	default:
+    	assert(false);
+	}
+}
+
 // This function is called only once at the beginning of the program
 // This function can contain any complex operation that can be pre-computed once
 void scene_structure::initialize()
@@ -67,7 +80,9 @@ void scene_structure::initialize()
 	cube1.model.translation = { 1.0f,1.0f,-0.1f };
 	cube1.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/wood.jpg");
 
-	cube2 = cube1;
+	cylinder.initialize_data_on_gpu(mesh_primitive_cylinder(0.25f, {0, 0, -0.25f}, {0, 0, 0.25f}, 100, 200, true));
+	cylinder.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/polkadot.jpg");
+
 	mesh_drawable cylinder_base;
 	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 0,0,-0.25 }, { 0,0,0.25f }));
 	mesh_drawable sphere;
@@ -78,8 +93,8 @@ void scene_structure::initialize()
 	char_vel={0.0f,0,0.0f};
 	wind.at(0)=2*max*dis(gen)-max;
 	wind.at(1)=2*max*dis(gen)-max;
-	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
-	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
+	cubes.push_back({choose_box(),char_pos,vec3{0,0,0},0.5f});
+	cubes.push_back({choose_box(),char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
 
 }
 
@@ -183,15 +198,6 @@ void scene_structure::display_frame()
 		//draw_wireframe(cube1, environment);
 		//draw_wireframe(cube2, environment);
 	}
-
-	
-
-
-
-
-
-
-
 }
 
 void scene_structure::display_gui()
@@ -234,7 +240,7 @@ void scene_structure::drop_cube()
 			a=-a;
 		}
 		pos.at((i+1)%2)+=5.0f*a;
-		cubes.push_back({cube1, pos, vec3{0, 0, 0},0.5f});
+		cubes.push_back({choose_box(), pos, vec3{0, 0, 0},0.5f});
 		if (dis(gen)<0.25*(i+1)){
 			break;
 		}
@@ -249,8 +255,8 @@ void scene_structure::restart()
 	wind.at(0)=2*max*dis(gen)-max;
 	wind.at(1)=2*max*dis(gen)-max;
 	cubes.clear();
-	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
-	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
+	cubes.push_back({choose_box(),char_pos,vec3{0,0,0},0.5f});
+	cubes.push_back({choose_box(),char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
 }
 
 
