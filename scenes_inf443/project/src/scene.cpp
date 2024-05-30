@@ -1,6 +1,8 @@
 #include "scene.hpp"
 #include <GLFW/glfw3.h>
 #include <random>
+#include <thread>  // Include the thread library
+#include <chrono>  // Include the chrono library for duration
 
 using namespace cgp;
 std::random_device rd;          // Obtain a random seed from the hardware
@@ -91,11 +93,11 @@ void scene_structure::initialize()
 	hierarchy.add(sphere, "Sphere", "Cylinder base", {0.0f,0,0.35f}); // the translation is used to place the sphere at the extremity of the cylinder
 	char_pos={0,0,0};
 	char_vel={0.0f,0,0.0f};
-	wind.at(0)=2*max*dis(gen)-max;
-	wind.at(1)=2*max*dis(gen)-max;
-	cubes.push_back({choose_box(),char_pos,vec3{0,0,0},0.5f});
-	cubes.push_back({choose_box(),char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
-
+	wind.at(0)=0;
+	wind.at(1)=0;
+	cubes.push_back({choose_box(), char_pos,vec3{0,0,0}, 0.5f});
+	cubes.push_back({choose_box(), char_pos+vec3{0,-1,0}, vec3{0,0,0}, 0.5f});
+	playing=true;
 }
 
 
@@ -105,6 +107,10 @@ void scene_structure::initialize()
 void scene_structure::simulation_step(float dt)
 {
 	//vec3 g = { 0,0,-9.81f }; // gravity
+	int difficulty=cnt/5;
+		if (difficulty>=5){
+			difficulty=5;
+		}
 	if (char_pos.at(2)>0){
 	char_vel.at(2) -= dt * 9.81;}
 	for (int i=0;i<3;i++){
@@ -114,8 +120,8 @@ void scene_structure::simulation_step(float dt)
 	if (char_pos.at(2)<0){
 		char_pos.at(2)=0;
 		char_vel={0,0,0};
-		wind.at(0)=2*max*dis(gen)-max;
-		wind.at(1)=2*max*dis(gen)-max;
+		wind.at(0)=2*difficulty*dis(gen)-difficulty;
+		wind.at(1)=2*difficulty*dis(gen)-difficulty;
 		Obj now=cubes.at(0);
 		if (char_pos.at(1)-now.pos.at(1)<now.size/2&&char_pos.at(1)-now.pos.at(1)>-now.size/2&&char_pos.at(0)-now.pos.at(0)<now.size/2&&char_pos.at(0)-now.pos.at(0)>-now.size/2){
 			streak=1;
@@ -125,17 +131,21 @@ void scene_structure::simulation_step(float dt)
 		if (char_pos.at(1)-c.pos.at(1)<c.size/2&&char_pos.at(1)-c.pos.at(1)>-c.size/2&&char_pos.at(0)-c.pos.at(0)<c.size/2&&char_pos.at(0)-c.pos.at(0)>-c.size/2){
 			if (char_pos.at(1)-c.pos.at(1)<c.size/4&&char_pos.at(1)-c.pos.at(1)>-c.size/4&&char_pos.at(0)-c.pos.at(0)<c.size/4&&char_pos.at(0)-c.pos.at(0)>-c.size/4){
 				streak+=2;
+				
 			}
 			else{
 				streak=1;
 			}
 		point+=streak;
+		cnt+=1;
 		drop_cube();}
 		else{
-			restart();
+			playing=false;
+			//restart();
 		}}
 		else{
-			restart();
+			playing=false;
+			//restart();
 		}
 	}
 }
@@ -161,15 +171,19 @@ void scene_structure::display_frame()
 		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1.0f,1.0f,1.0f};
 		hierarchy["Sphere"].drawable.model.translation={0,0,0};
 	}
-	if (char_vel.at(2)!=0){
-		vec3 rot;
+	vec3 rot;
 		if (state.coor==0){
 			rot={0,-1,0};
 		}
 		else {
 			rot={-1,0,0};
 		}
+	if (char_vel.at(2)!=0){
+		
 		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle(rot, state.dir*1.85*(timer.t-state.release_time)/(state.release_time-state.press_time));
+	}
+	else{
+		hierarchy["Cylinder base"].transform_local.rotation = rotation_transform::from_axis_angle(rot, 0);
 	}
 	if (gui.display_frame)
 		draw(global_frame, environment);
@@ -183,6 +197,8 @@ void scene_structure::display_frame()
 	draw(hierarchy, environment);
 	for (auto& cube : cubes) {
 		cube.mesh.model.translation = cube.pos;
+		cube.mesh.model.scaling_xyz.at(0)=cube.size*2.0f;
+		cube.mesh.model.scaling_xyz.at(1)=cube.size*2.0f;
 		draw(cube.mesh, environment);
 	}
 
@@ -207,7 +223,18 @@ void scene_structure::display_gui()
 	ImGui::Text("wind on x-axis %f", wind.at(0));
 	ImGui::Text("wind on y-axis %f", wind.at(1));
 	ImGui::Text("Current score %d", point);
-
+	int difficulty=cnt/5;
+		if (difficulty>=5){
+			difficulty=5;
+		}
+	ImGui::Text("Current dfficulty %d", difficulty);
+	if (!playing){
+		ImGui::Text("Game Over!!!");
+	}
+	bool restarting=ImGui::Button("Restart");
+	if (restarting){
+		restart();
+	}
 }
 
 void scene_structure::mouse_move_event()
@@ -233,14 +260,19 @@ void scene_structure::drop_cube()
 	Obj c=cubes.at(cubeat);
 	cubes.clear();
 	cubes.push_back(c);
+	int difficulty=cnt/5;
+		if (difficulty>=5){
+			difficulty=5;
+		}
 	for (int i=0;i<4;i++){
-		vec3 pos = c.pos;
-		double a=dis(gen);
+		vec3 pos = char_pos;
+		
+		double a=1+(difficulty+1)*dis(gen);
 		if (i==0 || i==3){
 			a=-a;
 		}
-		pos.at((i+1)%2)+=5.0f*a;
-		cubes.push_back({choose_box(), pos, vec3{0, 0, 0},0.5f});
+		pos.at((i+1)%2)+=a;
+		cubes.push_back({choose_box(), pos, vec3{0, 0, 0},0.5f*(1.0f-difficulty*0.1f)});
 		if (dis(gen)<0.25*(i+1)){
 			break;
 		}
@@ -248,15 +280,19 @@ void scene_structure::drop_cube()
 }
 void scene_structure::restart()
 {
+
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 	streak=1;
 	point=0;
+	cnt=0;
 	char_pos={0,0,0};
 	char_vel={0.0f,0,0.0f};
-	wind.at(0)=2*max*dis(gen)-max;
-	wind.at(1)=2*max*dis(gen)-max;
+	wind.at(0)=0;
+	wind.at(1)=0;
 	cubes.clear();
 	cubes.push_back({choose_box(),char_pos,vec3{0,0,0},0.5f});
 	cubes.push_back({choose_box(),char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
+	playing=true;
 }
 
 

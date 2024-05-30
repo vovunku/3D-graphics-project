@@ -259,6 +259,7 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 			std::cout << str_pretty(camera_model.matrix_view()) << std::endl;
 
 		}
+		if (scene.char_pos.at(2)<=0 && scene.playing){
 		switch (key){
 			case GLFW_KEY_A:{
 				scene.state.coor=1;
@@ -280,12 +281,13 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 				scene.state.dir=-1;
 				scene.cubeat=4;
 				break;}
-			default:
-				{scene.state.coor=0;
-				scene.state.dir=0;
+			default:{
+				// scene.state.coor=0;
+				// scene.state.dir=0;
 				break;}
 			}
-		if (scene.state.dir!=0){
+		}
+		if (scene.state.dir!=0 && scene.playing){
 		if (action == GLFW_PRESS) {
 			if (scene.char_vel.at(2)==0 && scene.char_vel.at(1)==0 ){
         	scene.state.pressed = true;
