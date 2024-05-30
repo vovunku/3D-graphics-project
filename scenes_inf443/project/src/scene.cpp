@@ -82,7 +82,7 @@ void scene_structure::initialize()
 	wind.at(1)=0;
 	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
 	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
-
+	playing=true;
 }
 
 
@@ -125,10 +125,12 @@ void scene_structure::simulation_step(float dt)
 		cnt+=1;
 		drop_cube();}
 		else{
-			restart();
+			playing=false;
+			//restart();
 		}}
 		else{
-			restart();
+			playing=false;
+			//restart();
 		}
 	}
 }
@@ -220,7 +222,13 @@ void scene_structure::display_gui()
 			difficulty=5;
 		}
 	ImGui::Text("Current dfficulty %d", difficulty);
-
+	if (!playing){
+		ImGui::Text("Game Over!!!");
+	}
+	bool restarting=ImGui::Button("Restart");
+	if (restarting){
+		restart();
+	}
 }
 
 void scene_structure::mouse_move_event()
@@ -266,7 +274,8 @@ void scene_structure::drop_cube()
 }
 void scene_structure::restart()
 {
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+
+	//std::this_thread::sleep_for(std::chrono::seconds(5));
 	streak=1;
 	point=0;
 	cnt=0;
@@ -277,6 +286,7 @@ void scene_structure::restart()
 	cubes.clear();
 	cubes.push_back({cube1,char_pos,vec3{0,0,0},0.5f});
 	cubes.push_back({cube1,char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
+	playing=true;
 }
 
 
