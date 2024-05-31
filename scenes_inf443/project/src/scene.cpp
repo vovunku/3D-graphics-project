@@ -177,14 +177,7 @@ void scene_structure::simulation_step(float dt)
 }
 void scene_structure::display_frame()
 {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	// Disable depth buffer writing
-	//  - Transparent elements cannot use depth buffer
-	//  - They are supposed to be display from furest to nearest elements
-	glDepthMask(false);
-
+	
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
 	const vec3 vert={0,0,0.5f};
@@ -233,7 +226,16 @@ void scene_structure::display_frame()
 	// //water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
 	// water.initialize_data_on_gpu(terrain_sea);
 	// water.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sea.png");
-	//draw(water, environment);
+	if (num_scene==1){
+	draw(water, environment);}
+	if (num_scene==0){
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Disable depth buffer writing
+	//  - Transparent elements cannot use depth buffer
+	//  - They are supposed to be display from furest to nearest elements
+	glDepthMask(false);
 	draw(terrain,environment);
 	//draw(tree, environment);
 	//draw(cube1, environment);
@@ -263,7 +265,7 @@ void scene_structure::display_frame()
 		//draw_wireframe(cube2, environment);
 	}
 	glDepthMask(true);
-	glDisable(GL_BLEND);
+	glDisable(GL_BLEND);}
 	hierarchy.update_local_to_global_coordinates();
 	draw(hierarchy, environment);
 	for (auto& cube : cubes) {
@@ -292,6 +294,14 @@ void scene_structure::display_gui()
 	bool restarting=ImGui::Button("Restart");
 	if (restarting){
 		restart();
+	}
+	bool grass_scene=ImGui::Button("Grass");
+	if (grass_scene){
+		num_scene=0;
+	}
+	bool sea_scene=ImGui::Button("Sea");
+	if (sea_scene){
+		num_scene=1;
 	}
 }
 

@@ -54,7 +54,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
-
+	int num_scene=1;
 	timer_basic timer;
 	std::vector<cgp::vec3> grass_position;
 	mesh_drawable terrain;
