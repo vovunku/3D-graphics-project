@@ -8,14 +8,14 @@
 using namespace cgp;
 
 // Evaluate 3D position of the terrain for any (x,y)
-float evaluate_terrain_height(float x, float y,float t,vec2 wind)
+float evaluate_sea_terrain_height(float x, float y,float t,vec2 wind)
 {
     float omega=20*std::sqrt((x-wind.at(0)*t)*(x-wind.at(0)*t)+(y-wind.at(1)*t)*(y-wind.at(1)*t))-3*t;
     float z=0.05*std::cos(omega);
     return z;
 }
 
-mesh create_terrain_mesh(int N, float terrain_length,float t, vec2 wind)
+mesh create_sea_terrain_mesh(int N, float terrain_length,float t, vec2 wind)
 {
 
     mesh terrain; // temporary terrain storage (CPU only)
@@ -35,7 +35,7 @@ mesh create_terrain_mesh(int N, float terrain_length,float t, vec2 wind)
             float y = (v - 0.5f) * terrain_length;
 
             // Compute the surface height function at the given sampled coordinate
-            float z = evaluate_terrain_height(x,y,t,wind);
+            float z = evaluate_sea_terrain_height(x,y,t,wind);
             //float persistency = 0.35f;
 	        //float frequency_gain = 2.0f;
 	        //int octave = 6;
@@ -69,7 +69,7 @@ mesh create_terrain_mesh(int N, float terrain_length,float t, vec2 wind)
     return terrain;
 }
 
-void update_terrain_mesh(mesh_drawable terrain,int N,float length, float t, vec2 wind)
+void update_sea_terrain_mesh(mesh_drawable terrain,int N,float length, float t, vec2 wind)
 {
 
     //mesh terrain; // temporary terrain storage (CPU only)
@@ -92,7 +92,7 @@ void update_terrain_mesh(mesh_drawable terrain,int N,float length, float t, vec2
             float y = (v - 0.5f) * length;
 
             // Compute the surface height function at the given sampled coordinate
-            float z = evaluate_terrain_height(x,y,t,wind);
+            float z = evaluate_sea_terrain_height(x,y,t,wind);
             //float persistency = 0.35f;
 	        //float frequency_gain = 2.0f;
 	        //int octave = 6;

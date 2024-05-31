@@ -5,7 +5,7 @@
 #include <chrono>  // Include the chrono library for duration
 
 #include "sea_terrain.hpp"
-
+#include "grass_terrain.hpp"
 using namespace cgp;
 std::random_device rd;          // Obtain a random seed from the hardware
 std::mt19937 gen(rd());         // Seed the generator
@@ -67,20 +67,38 @@ void scene_structure::initialize()
 	// ********************************************** //
 
 	float L = 5.0f;
-	mesh terrain_mesh = mesh_primitive_grid({ -L,-L,0 }, { L,-L,0 }, { L,L,0 }, { -L,L,0 }, 100, 100);
-	deform_terrain(terrain_mesh);
-	terrain.initialize_data_on_gpu(terrain_mesh);
-	terrain.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sand.jpg");
+	// mesh terrain_mesh = mesh_primitive_grid({ -L,-L,0 }, { L,-L,0 }, { L,L,0 }, { -L,L,0 }, 100, 100);
+	// deform_terrain(terrain_mesh);
+	// terrain.initialize_data_on_gpu(terrain_mesh);
+	// terrain.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sand.jpg");
 
 	float sea_w = 8.0;
-	float sea_z = 0.0f;
 	int N_terrain_samples = 100;
 	//float terrain_length = 20;
-	mesh terrain_sea=create_terrain_mesh(N_terrain_samples,2*sea_w,0,{0,0});
+	mesh terrain_sea=create_sea_terrain_mesh(N_terrain_samples,2*sea_w,0,{0,0});
 	//water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
 	water.initialize_data_on_gpu(terrain_sea);
 	water.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sea.png");
-
+	opengl_shader_structure shader_custom;
+	shader_custom.load(
+    project::path + "shaders/mesh/mesh_moving.vert.glsl", 
+    project::path + "shaders/mesh/mesh.frag.glsl");
+	water.shader=shader_custom;
+	// int N_terrain_samples = 100;
+	float terrain_length = 20;
+	mesh terrain_grass=create_grass_terrain_mesh(N_terrain_samples,2*sea_w);
+	//water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
+	terrain.initialize_data_on_gpu(terrain_grass);
+	terrain.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/texture_grass.jpg");
+	grass_position=generate_positions_on_terrain(N_terrain_samples,2*sea_w);
+	mesh quad_mesh = mesh_primitive_quadrangle({ -0.5f,0,0 }, { 0.5f,0,0 }, { 0.5f,0,1 }, { -0.5f,0,1 });
+	grass.initialize_data_on_gpu(quad_mesh);
+	grass.texture.load_and_initialize_texture_2d_on_gpu(project::path+"assets/grass.png");
+	opengl_shader_structure shader_custom_grass;
+	shader_custom_grass.load(
+    project::path + "shaders/mesh/mesh_grass.vert.glsl", 
+    project::path + "shaders/mesh/mesh.frag.glsl");
+	grass.shader=shader_custom_grass;
 	tree.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/palm_tree/palm_tree.obj"));
 	tree.model.rotation = rotation_transform::from_axis_angle({ 1,0,0 }, Pi / 2.0f);
 	tree.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/palm_tree/palm_tree.jpg", GL_REPEAT, GL_REPEAT);
@@ -159,6 +177,13 @@ void scene_structure::simulation_step(float dt)
 }
 void scene_structure::display_frame()
 {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Disable depth buffer writing
+	//  - Transparent elements cannot use depth buffer
+	//  - They are supposed to be display from furest to nearest elements
+	glDepthMask(false);
 
 	// Set the light to the current position of the camera
 	environment.light = camera_control.camera_model.position();
@@ -202,24 +227,29 @@ void scene_structure::display_frame()
 	//draw(terrain, environment);
 	int N_terrain_samples=100;
 	float sea_w=8.0;
-	update_terrain_mesh(water,N_terrain_samples,2*sea_w,timer.t,wind);
+	//update_terrain_mesh(water,N_terrain_samples,2*sea_w,timer.t,wind);
 	//water.clear();
 	// mesh terrain_sea=create_terrain_mesh(N_terrain_samples,2*sea_w,timer.t,wind);
 	// //water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
 	// water.initialize_data_on_gpu(terrain_sea);
 	// water.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sea.png");
-	draw(water, environment);
+	//draw(water, environment);
+	draw(terrain,environment);
 	//draw(tree, environment);
 	//draw(cube1, environment);
-	hierarchy.update_local_to_global_coordinates();
-	draw(hierarchy, environment);
-	for (auto& cube : cubes) {
-		cube.mesh.model.translation = cube.pos;
-		cube.mesh.model.scaling_xyz.at(0)=cube.size*2.0f;
-		cube.mesh.model.scaling_xyz.at(1)=cube.size*2.0f;
-		draw(cube.mesh, environment);
-	}
+	
+	for (vec3 pos:grass_position){
+	auto const& camera = camera_control.camera_model;
 
+	// Re-orient the grass shape to always face the camera direction
+	vec3 const right = camera.right();
+	// Rotation such that the grass follows the right-vector of the camera, while pointing toward the z-direction
+	rotation_transform R = rotation_transform::from_frame_transform({ 1,0,0 }, { 0,0,1 }, right, { 0,0,1 });
+	grass.model.rotation = R;
+	grass.model.translation=pos;
+	draw(grass, environment);
+	if (gui.display_wireframe)
+		draw_wireframe(grass,environment);}
 	// Animate the second cube in the water
 	//cube2.model.translation = { -1.0f, 6.0f+0.1*sin(0.5f*timer.t), -0.8f + 0.1f * cos(0.5f * timer.t)};
 	//cube2.model.rotation = rotation_transform::from_axis_angle({1,-0.2,0},Pi/12.0f*sin(0.5f*timer.t));
@@ -231,6 +261,16 @@ void scene_structure::display_frame()
 		//draw_wireframe(tree, environment);
 		//draw_wireframe(cube1, environment);
 		//draw_wireframe(cube2, environment);
+	}
+	glDepthMask(true);
+	glDisable(GL_BLEND);
+	hierarchy.update_local_to_global_coordinates();
+	draw(hierarchy, environment);
+	for (auto& cube : cubes) {
+		cube.mesh.model.translation = cube.pos;
+		cube.mesh.model.scaling_xyz.at(0)=cube.size*2.0f;
+		cube.mesh.model.scaling_xyz.at(1)=cube.size*2.0f;
+		draw(cube.mesh, environment);
 	}
 }
 

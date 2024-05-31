@@ -265,21 +265,25 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 				scene.state.coor=1;
 				scene.state.dir=-1;
 				scene.cubeat=1;
+				scene.state.pressed = true;
 				break;}
 			case GLFW_KEY_S:
 				{scene.state.coor=0;
 				scene.state.dir=1;
 				scene.cubeat=2;
+				scene.state.pressed = true;
 				break;}
 				case GLFW_KEY_D:
 				{scene.state.coor=1;
 				scene.state.dir=1;
 				scene.cubeat=3;
+				scene.state.pressed = true;
 				break;}
 			case GLFW_KEY_W:
 				{scene.state.coor=0;
 				scene.state.dir=-1;
 				scene.cubeat=4;
+				scene.state.pressed = true;
 				break;}
 			default:{
 				// scene.state.coor=0;
@@ -290,7 +294,7 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 		if (scene.state.dir!=0 && scene.playing){
 		if (action == GLFW_PRESS) {
 			if (scene.char_vel.at(2)==0 && scene.char_vel.at(1)==0 ){
-        	scene.state.pressed = true;
+        	
         	scene.state.press_time = glfwGetTime();}
 		}
 		if (action == GLFW_RELEASE) {
