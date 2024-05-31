@@ -13,7 +13,7 @@ using cgp::timer_basic;
 
 // Variables associated to the GUI (buttons, etc)
 struct gui_parameters {
-	bool display_frame = true;
+	bool display_frame = false;
 	bool display_wireframe = false;
 };
 

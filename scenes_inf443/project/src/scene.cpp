@@ -4,6 +4,8 @@
 #include <thread>  // Include the thread library
 #include <chrono>  // Include the chrono library for duration
 
+#include "sea_terrain.hpp"
+
 using namespace cgp;
 std::random_device rd;          // Obtain a random seed from the hardware
 std::mt19937 gen(rd());         // Seed the generator
@@ -31,10 +33,12 @@ mesh_drawable scene_structure::choose_box() {
 	switch (t) {
   	case BoxType::CUBE:
     	return cube1;
+
   	case BoxType::CYLINDER:
     	return cylinder;
   	default:
     	assert(false);
+		return cube1;
 	}
 }
 
@@ -69,8 +73,12 @@ void scene_structure::initialize()
 	terrain.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sand.jpg");
 
 	float sea_w = 8.0;
-	float sea_z = -0.8f;
-	water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
+	float sea_z = 0.0f;
+	int N_terrain_samples = 100;
+	//float terrain_length = 20;
+	mesh terrain_sea=create_terrain_mesh(N_terrain_samples,2*sea_w,0,{0,0});
+	//water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
+	water.initialize_data_on_gpu(terrain_sea);
 	water.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sea.png");
 
 	tree.initialize_data_on_gpu(mesh_load_file_obj(project::path + "assets/palm_tree/palm_tree.obj"));
@@ -157,6 +165,8 @@ void scene_structure::display_frame()
 	const vec3 vert={0,0,0.5f};
 	// Update time
 	timer.update();
+	environment.uniform_generic.uniform_float["time"] = timer.t;
+	environment.uniform_generic.uniform_vec2["wind"] = wind;
 	//glfwSetKeyCallback(window.glfw_window, key_callback);
 	simulation_step(timer.scale * 0.01f);
 	// conditional display of the global frame (set via the GUI)
@@ -189,9 +199,17 @@ void scene_structure::display_frame()
 		draw(global_frame, environment);
 
 	// Draw all the shapes
-	draw(terrain, environment);
+	//draw(terrain, environment);
+	int N_terrain_samples=100;
+	float sea_w=8.0;
+	update_terrain_mesh(water,N_terrain_samples,2*sea_w,timer.t,wind);
+	//water.clear();
+	// mesh terrain_sea=create_terrain_mesh(N_terrain_samples,2*sea_w,timer.t,wind);
+	// //water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
+	// water.initialize_data_on_gpu(terrain_sea);
+	// water.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sea.png");
 	draw(water, environment);
-	draw(tree, environment);
+	//draw(tree, environment);
 	//draw(cube1, environment);
 	hierarchy.update_local_to_global_coordinates();
 	draw(hierarchy, environment);
@@ -208,9 +226,9 @@ void scene_structure::display_frame()
 	//draw(cube2, environment);
 
 	if (gui.display_wireframe) {
-		draw_wireframe(terrain, environment);
+		//draw_wireframe(terrain, environment);
 		draw_wireframe(water, environment);
-		draw_wireframe(tree, environment);
+		//draw_wireframe(tree, environment);
 		//draw_wireframe(cube1, environment);
 		//draw_wireframe(cube2, environment);
 	}
@@ -218,8 +236,8 @@ void scene_structure::display_frame()
 
 void scene_structure::display_gui()
 {
-	ImGui::Checkbox("Frame", &gui.display_frame);
-	ImGui::Checkbox("Wireframe", &gui.display_wireframe);
+	//ImGui::Checkbox("Frame", &gui.display_frame);
+	//ImGui::Checkbox("Wireframe", &gui.display_wireframe);
 	ImGui::Text("wind on x-axis %f", wind.at(0));
 	ImGui::Text("wind on y-axis %f", wind.at(1));
 	ImGui::Text("Current score %d", point);
