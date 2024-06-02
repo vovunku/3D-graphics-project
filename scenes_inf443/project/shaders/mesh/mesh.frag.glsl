@@ -124,14 +124,14 @@ void main()
 	float Ka = material.phong.ambient;
 	float Kd = material.phong.diffuse;
 	float Ks = material.phong.specular;
-	vec3 ambiance=vec3(0.0,1.0,0.0);
+	vec3 ambiance=vec3(0.0,1.0,1.0);
 	vec3 color_shading = (Ka + Kd * diffuse_component) * color_object + Ks * specular_component * vec3(1.0, 1.0, 1.0);
 	float coef=min(0.02*count,0.5);
 	color_shading=color_shading*(1-coef)+coef*ambiance;
 	float dmax=30-count;
 	dmax=max(15,dmax);
 	vec3 p=fragment.position;
-	p=p+charpos;
+	p=p-charpos;
 	float d=length(camera_position-p);
     float cf=d/dmax;
     cf=min(cf,1);

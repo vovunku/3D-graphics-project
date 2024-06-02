@@ -206,6 +206,7 @@ void scene_structure::display_frame()
 	environment.uniform_generic.uniform_vec2["wind"] = wind;
 	environment.uniform_generic.uniform_float["count"] = cnt;
 	environment.uniform_generic.uniform_vec3["charpos"] = char_pos;
+	environment.background_color=vec3{0,1.0,1.0};
 	//glfwSetKeyCallback(window.glfw_window, key_callback);
 	
 	if (animation){
