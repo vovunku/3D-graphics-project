@@ -325,11 +325,13 @@ void scene_structure::display_gui()
 	ImGui::Text("Current dfficulty %d", difficulty);
 	//ImGui::Text("Pressed time %f Released time %f now %f", state.press_time,state.release_time,timer.t);
 	if (!playing){
-		ImGui::Text("Game Over!!!");
+		if (!firstvisit){
+		ImGui::Text("Game Over!!!");}
 	}
-	bool restarting=ImGui::Button("Restart");
+	bool restarting=ImGui::Button("New Game");
 	if (restarting){
 		animation=false;
+		firstvisit=false;
 		restart();
 	}
 	bool grass_scene=ImGui::Button("Grass");
@@ -344,6 +346,7 @@ void scene_structure::display_gui()
 	if (!playing || animation){
 	switching=ImGui::Button("Animation");}
 	if (switching){
+		firstvisit=false;
 		animation=!animation;
 		if (animation){
 			restart();

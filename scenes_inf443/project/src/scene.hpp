@@ -77,6 +77,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	int cnt=0;
 	bool playing=false;
 	bool animation=false;
+	bool firstvisit=true;
 	// ****************************** //
 	// Functions
 	// ****************************** //
