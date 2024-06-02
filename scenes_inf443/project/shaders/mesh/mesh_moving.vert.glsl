@@ -25,10 +25,10 @@ uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
 uniform float time;
 uniform vec2 wind;
-
+float freq=0.2;
 vec3 deformer(vec3 p0)
 {
-	float d = sqrt((p0.x-wind.x*time)*(p0.x-wind.x*time)+(p0.y-wind.y*time)*(p0.y-wind.y*time));
+	float d = sqrt((p0.x-wind.x*time*freq)*(p0.x-wind.x*time*freq)+(p0.y-wind.y*time*freq)*(p0.y-wind.y*time*freq));
 	float omega = 20.0*d - 3.0*time;
 
 	vec3 p = vec3(p0.x, p0.y, 0.05*cos(omega) );
@@ -38,7 +38,7 @@ vec3 deformer(vec3 p0)
 
 vec3 deformer_normal(vec3 p0)
 {
-	float d = sqrt((p0.x-wind.x*time)*(p0.x-wind.x*time)+(p0.y-wind.y*time)*(p0.y-wind.y*time));
+	float d = sqrt((p0.x-wind.x*time*freq)*(p0.x-wind.x*time*freq)+(p0.y-wind.y*time*freq)*(p0.y-wind.y*time*freq));
 	float omega = 20.0*d - 3.0*time;
 
 	// Compute exact normals after deformation

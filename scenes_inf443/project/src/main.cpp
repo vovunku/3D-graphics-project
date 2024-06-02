@@ -259,52 +259,55 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 			std::cout << str_pretty(camera_model.matrix_view()) << std::endl;
 
 		}
-		if (scene.char_pos.at(2)<=0 && scene.playing){
+		if (scene.char_pos.at(2)<=0 && scene.playing && !scene.state.pressed &&!scene.animation){
 		switch (key){
 			case GLFW_KEY_A:{
 				scene.state.coor=1;
 				scene.state.dir=-1;
 				scene.cubeat=1;
-				scene.state.pressed = true;
+				//scene.state.pressed = true;
 				break;}
 			case GLFW_KEY_S:
 				{scene.state.coor=0;
 				scene.state.dir=1;
 				scene.cubeat=2;
-				scene.state.pressed = true;
+				//scene.state.pressed = true;
 				break;}
 				case GLFW_KEY_D:
 				{scene.state.coor=1;
 				scene.state.dir=1;
 				scene.cubeat=3;
-				scene.state.pressed = true;
+				//scene.state.pressed = true;
 				break;}
 			case GLFW_KEY_W:
 				{scene.state.coor=0;
 				scene.state.dir=-1;
 				scene.cubeat=4;
-				scene.state.pressed = true;
+				//scene.state.pressed = true;
 				break;}
 			default:{
 				// scene.state.coor=0;
-				// scene.state.dir=0;
+				scene.state.dir=10;
 				break;}
 			}
 		}
-		if (scene.state.dir!=0 && scene.playing){
-		if (action == GLFW_PRESS) {
+		if (scene.state.dir!=10 && scene.playing &&!scene.animation){
+		if (action == GLFW_PRESS && !scene.state.pressed) {
 			if (scene.char_vel.at(2)==0 && scene.char_vel.at(1)==0 ){
         	
-        	scene.state.press_time = glfwGetTime();}
+        	scene.state.press_time = glfwGetTime();
+			scene.state.pressed = true;
+			}
 		}
 		if (action == GLFW_RELEASE) {
+			if ((key==GLFW_KEY_A && scene.cubeat==1)||(key==GLFW_KEY_S && scene.cubeat==2)||(key==GLFW_KEY_D && scene.cubeat==3)||(key==GLFW_KEY_W && scene.cubeat==4)){
 			if (scene.state.pressed){
         	scene.state.pressed = false;
         	scene.state.release_time = glfwGetTime();
 			scene.char_vel.at(2)+=10.0f*(scene.state.release_time-scene.state.press_time);
 			scene.char_vel.at(scene.state.coor)+=3.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;
 			scene.v_max=4.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;
-			scene.v_min=2.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;}
+			scene.v_min=2.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;}}
 	}
 	}
 	}

@@ -25,7 +25,7 @@ uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
 uniform float time;
 uniform vec2 wind;
-
+float freq=0.2;
 
 
 void main()

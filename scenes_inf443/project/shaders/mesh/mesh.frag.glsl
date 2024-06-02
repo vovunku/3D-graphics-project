@@ -61,7 +61,9 @@ struct material_structure
 }; 
 
 uniform material_structure material;
-
+uniform float time;
+uniform float count;
+uniform vec3 charpos;
 
 void main()
 {
@@ -123,7 +125,20 @@ void main()
 	float Kd = material.phong.diffuse;
 	float Ks = material.phong.specular;
 	vec3 color_shading = (Ka + Kd * diffuse_component) * color_object + Ks * specular_component * vec3(1.0, 1.0, 1.0);
-	
+	float coef=min(0.02*count,0.5);
+	color_shading=color_shading*(1-coef);
+	float dmax=30-count;
+	dmax=max(15,dmax);
+	vec3 p=fragment.position;
+	p=p+charpos;
+	float d=length(camera_position-p);
+    float cf=d/dmax;
+    cf=min(cf,1);
+	color_shading=(1-cf)*color_shading;
+	if (count>15){
+		float alpha=abs(cos(time));
+		color_shading=color_shading*alpha;
+	}
 	// Output color, with the alpha component
 	FragColor = vec4(color_shading, material.alpha * color_image_texture.a);
 }

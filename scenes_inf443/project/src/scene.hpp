@@ -75,7 +75,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	int point=0;
 	int streak=1;
 	int cnt=0;
-	bool playing;
+	bool playing=false;
+	bool animation=false;
 	// ****************************** //
 	// Functions
 	// ****************************** //
@@ -90,6 +91,8 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void idle_frame();
 	void drop_cube();
 	void restart();
+	int find(int dir,float a);
+	void animate(float dt,int dir,float a);
 	mesh_drawable choose_box();
 };
 

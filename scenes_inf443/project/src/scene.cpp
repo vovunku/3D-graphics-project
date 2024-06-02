@@ -123,7 +123,7 @@ void scene_structure::initialize()
 	wind.at(1)=0;
 	cubes.push_back({choose_box(), char_pos,vec3{0,0,0}, 0.5f});
 	cubes.push_back({choose_box(), char_pos+vec3{0,-1,0}, vec3{0,0,0}, 0.5f});
-	playing=true;
+	playing=false;
 }
 
 
@@ -142,7 +142,7 @@ void scene_structure::simulation_step(float dt)
 	for (int i=0;i<3;i++){
 	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
 	}
-	char_vel.at(state.coor) += wind.at(state.coor) * dt*(char_vel.at(state.coor)-v_min)*(v_max-char_vel.at(state.coor))*char_vel.at(state.coor);
+	char_vel.at(state.coor) += wind.at(state.coor) * dt*(char_vel.at(state.coor)-v_min)*(v_max-char_vel.at(state.coor))*char_vel.at(state.coor)*0.0001;
 	if (char_pos.at(2)<0){
 		char_pos.at(2)=0;
 		char_vel={0,0,0};
@@ -164,7 +164,26 @@ void scene_structure::simulation_step(float dt)
 			}
 		point+=streak;
 		cnt+=1;
+		if (!animation){
 		drop_cube();}
+		else{
+			float t=(difficulty+1)*0.1f*dis(gen)*timer.scale+0.5f;
+			state.press_time=timer.t+2.0f*timer.scale;
+			v_max=4.0f*(state.release_time-state.press_time)*state.dir;
+			v_min=2.0f*(state.release_time-state.press_time)*state.dir;
+			state.pressed=false;
+			state.release_time=state.press_time+t;
+			state.coor=0;
+			state.dir=1;
+			if (dis(gen)>0.5){
+				state.coor=1;
+			}
+			if (dis(gen)>0.5){
+				state.dir=-1;
+			}
+			float a=t*state.dir;
+			animate(0.01*timer.scale,state.coor,a);
+		}}
 		else{
 			playing=false;
 			//restart();
@@ -185,8 +204,24 @@ void scene_structure::display_frame()
 	timer.update();
 	environment.uniform_generic.uniform_float["time"] = timer.t;
 	environment.uniform_generic.uniform_vec2["wind"] = wind;
+	environment.uniform_generic.uniform_float["count"] = cnt;
+	environment.uniform_generic.uniform_vec3["charpos"] = char_pos;
 	//glfwSetKeyCallback(window.glfw_window, key_callback);
+	
+	if (animation){
+		if (timer.t>=state.release_time && state.pressed){
+			state.pressed=false;
+			char_vel.at(2)=10.0f*(state.release_time-state.press_time);
+			char_vel.at(state.coor)=3.0f*(state.release_time-state.press_time)*state.dir;
+			
+		}
+	}
 	simulation_step(timer.scale * 0.01f);
+	if (animation){
+		if (timer.t>=state.press_time && timer.t<state.release_time){
+			state.pressed=true;
+		}
+	}
 	// conditional display of the global frame (set via the GUI)
 	hierarchy["Cylinder base"].transform_local.translation = char_pos+vert;
 	if (state.pressed){
@@ -288,11 +323,13 @@ void scene_structure::display_gui()
 			difficulty=5;
 		}
 	ImGui::Text("Current dfficulty %d", difficulty);
+	//ImGui::Text("Pressed time %f Released time %f now %f", state.press_time,state.release_time,timer.t);
 	if (!playing){
 		ImGui::Text("Game Over!!!");
 	}
 	bool restarting=ImGui::Button("Restart");
 	if (restarting){
+		animation=false;
 		restart();
 	}
 	bool grass_scene=ImGui::Button("Grass");
@@ -302,6 +339,33 @@ void scene_structure::display_gui()
 	bool sea_scene=ImGui::Button("Sea");
 	if (sea_scene){
 		num_scene=1;
+	}
+	bool switching = false;
+	if (!playing || animation){
+	switching=ImGui::Button("Animation");}
+	if (switching){
+		animation=!animation;
+		if (animation){
+			restart();
+			cubeat=0;
+			float t=(difficulty+1)*0.1f*dis(gen)*timer.scale+0.5f;
+			state.press_time=timer.t+2.0f*timer.scale;
+			state.pressed=false;
+			state.release_time=state.press_time+t;
+			state.coor=0;
+			state.dir=1;
+			if (dis(gen)>0.5){
+				state.coor=1;
+			}
+			if (dis(gen)>0.5){
+				state.dir=-1;
+			}
+			float a=t*state.dir;
+			animate(0.01f*timer.scale,state.coor,a);
+		}
+		else {
+			restart();
+		}
 	}
 }
 
@@ -362,5 +426,63 @@ void scene_structure::restart()
 	cubes.push_back({choose_box(),char_pos+vec3{0,-1,0},vec3{0,0,0},0.5f});
 	playing=true;
 }
+int scene_structure::find(int dir,float a){
+	if (a<0){
+		if (dir==0){
+			return 3;
+		}
+		else{
+			return 0;
+		}
+	}
+	else{
+		if (dir==0){
+			return 1;
+		}
+		else{
+			return 2;
+		}
+	}
+}
+void scene_structure::animate(float dt,int dir,float a){
+	vec3 temp_pos;
+	vec3 temp_vel;
+	for (int i=0;i<3;i++){
+		temp_pos.at(i)=char_pos.at(i);
+	}
+	// char_vel.at(dir)=3*a;
+	// char_vel.at(1-dir)=0;
+	// char_vel.at(2)=10*fabs(a);
+	temp_vel.at(dir)=3*a;
+	temp_vel.at(1-dir)=0;
+	temp_vel.at(2)=10*fabs(a);
+	while(temp_pos.at(2)+temp_vel.at(2)*dt>=0){
+		temp_vel.at(2) -= dt * 9.81;
+		for (int i=0;i<3;i++){
+	    	temp_pos.at(i) = temp_pos.at(i) + dt * temp_vel.at(i);
+		}
+		temp_vel.at(state.coor) += wind.at(state.coor) * dt*(temp_vel.at(state.coor)-v_min)*(v_max-temp_vel.at(state.coor))*temp_vel.at(state.coor)*0.0001;
+	}
+	Obj c=cubes.at(cubeat);
+	cubes.clear();
+	cubes.push_back(c);
+	int difficulty=cnt/5;
+		if (difficulty>=5){
+			difficulty=5;
+		}
+	
+	
+	cubeat=find(dir,a)+1;
+	for (int i=0;i<cubeat-1;i++){
+		vec3 pos = char_pos;
+		double a=1+(difficulty+1)*dis(gen);
+		if (i==0 || i==3){
+			a=-a;
+		}
+		pos.at((i+1)%2)+=a;
+		cubes.push_back({choose_box(), pos, vec3{0, 0, 0},0.5f*(1.0f-difficulty*0.1f)});
+	}
+	cubes.push_back({choose_box(),temp_pos,vec3{0,0,0},0.5f*(1.0f-difficulty*0.1f)});
 
+}
 
