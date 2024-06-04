@@ -6,6 +6,7 @@
 
 #include "sea_terrain.hpp"
 #include "grass_terrain.hpp"
+#include "rain.hpp"
 using namespace cgp;
 std::random_device rd;          // Obtain a random seed from the hardware
 std::mt19937 gen(rd());         // Seed the generator
@@ -66,7 +67,7 @@ void scene_structure::initialize()
 	// Create the shapes seen in the 3D scene
 	// ********************************************** //
 
-	float L = 5.0f;
+	//float L = 5.0f;
 	// mesh terrain_mesh = mesh_primitive_grid({ -L,-L,0 }, { L,-L,0 }, { L,L,0 }, { -L,L,0 }, 100, 100);
 	// deform_terrain(terrain_mesh);
 	// terrain.initialize_data_on_gpu(terrain_mesh);
@@ -85,7 +86,7 @@ void scene_structure::initialize()
     project::path + "shaders/mesh/mesh.frag.glsl");
 	water.shader=shader_custom;
 	// int N_terrain_samples = 100;
-	float terrain_length = 20;
+	//float terrain_length = 20;
 	mesh terrain_grass=create_grass_terrain_mesh(N_terrain_samples,2*sea_w);
 	//water.initialize_data_on_gpu(mesh_primitive_grid({ -sea_w,-sea_w,sea_z }, { sea_w,-sea_w,sea_z }, { sea_w,sea_w,sea_z }, { -sea_w,sea_w,sea_z }));
 	terrain.initialize_data_on_gpu(terrain_grass);
@@ -110,7 +111,13 @@ void scene_structure::initialize()
 
 	cylinder.initialize_data_on_gpu(mesh_primitive_cylinder(0.25f, {0, 0, -0.25f}, {0, 0, 0.25f}, 100, 200, true));
 	cylinder.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/polkadot.jpg");
-
+	mesh rain=create_rain();
+	raindrop.initialize_data_on_gpu(rain);
+	opengl_shader_structure shader_custom_rain;
+	shader_custom_rain.load(
+    project::path + "shaders/mesh/mesh_rain.vert.glsl", 
+    project::path + "shaders/mesh/mesh.frag.glsl");
+	raindrop.shader=shader_custom_rain;
 	mesh_drawable cylinder_base;
 	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 0,0,-0.25 }, { 0,0,0.25f }));
 	mesh_drawable sphere;
@@ -137,6 +144,24 @@ void scene_structure::simulation_step(float dt)
 		if (difficulty>=5){
 			difficulty=5;
 		}
+	if (dis(gen)<=difficulty*0.1){
+		float sea_w = 8.0;
+		float x= 2*sea_w*dis(gen)-sea_w;
+		float y= 2*sea_w*dis(gen)-sea_w;
+		droplets.push_back({raindrop,vec3{x,y,10},vec3{0,0,0},0.2f});
+		//std::cout<<"1"<<std::endl;
+	}
+	for (int i=0;i<droplets.size();i++){
+		droplets.at(i).pos+=droplets.at(i).vel*dt;
+		droplets.at(i).vel.at(0)+=wind.at(0)*dt;
+		droplets.at(i).vel.at(1)+=wind.at(1)*dt;
+		droplets.at(i).vel.at(2)-=9.81f*dt;
+		//std::cout<<droplets.at(i).pos.at(2)<<std::endl;
+		if (droplets.at(i).pos.at(2)<0){
+			droplets.erase(droplets.begin()+i);
+			i--;
+		}
+	}
 	if (char_pos.at(2)>0){
 	char_vel.at(2) -= dt * 9.81;}
 	for (int i=0;i<3;i++){
@@ -254,8 +279,8 @@ void scene_structure::display_frame()
 
 	// Draw all the shapes
 	//draw(terrain, environment);
-	int N_terrain_samples=100;
-	float sea_w=8.0;
+	// int N_terrain_samples=100;
+	// float sea_w=8.0;
 	//update_terrain_mesh(water,N_terrain_samples,2*sea_w,timer.t,wind);
 	//water.clear();
 	// mesh terrain_sea=create_terrain_mesh(N_terrain_samples,2*sea_w,timer.t,wind);
@@ -292,7 +317,6 @@ void scene_structure::display_frame()
 	//cube2.model.translation = { -1.0f, 6.0f+0.1*sin(0.5f*timer.t), -0.8f + 0.1f * cos(0.5f * timer.t)};
 	//cube2.model.rotation = rotation_transform::from_axis_angle({1,-0.2,0},Pi/12.0f*sin(0.5f*timer.t));
 	//draw(cube2, environment);
-
 	if (gui.display_wireframe) {
 		//draw_wireframe(terrain, environment);
 		draw_wireframe(water, environment);
@@ -310,6 +334,20 @@ void scene_structure::display_frame()
 		cube.mesh.model.scaling_xyz.at(1)=cube.size*2.0f;
 		draw(cube.mesh, environment);
 	}
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Disable depth buffer writing
+	//  - Transparent elements cannot use depth buffer
+	//  - They are supposed to be display from furest to nearest elements
+	glDepthMask(false);
+		for (auto rain:droplets){
+		rain.mesh.model.translation = rain.pos;
+		draw(rain.mesh, environment);
+		//std::cout<<"yes"<<std::endl;
+	}
+	glDepthMask(true);
+	glDisable(GL_BLEND);
 }
 
 void scene_structure::display_gui()

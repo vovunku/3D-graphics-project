@@ -63,6 +63,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	mesh_drawable tree;
 	mesh_drawable cube1;
 	mesh_drawable cylinder;
+	mesh_drawable raindrop;
 	cgp::hierarchy_mesh_drawable hierarchy;
 	struct KeyState state;
 	vec3 char_pos;
@@ -82,6 +83,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// Functions
 	// ****************************** //
 	std::deque<Obj> cubes;
+	std::deque<Obj> droplets;
 	void initialize();    // Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
