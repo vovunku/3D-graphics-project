@@ -7,6 +7,7 @@
 #include "sea_terrain.hpp"
 #include "grass_terrain.hpp"
 #include "rain.hpp"
+#include "snow.hpp"
 using namespace cgp;
 std::random_device rd;          // Obtain a random seed from the hardware
 std::mt19937 gen(rd());         // Seed the generator
@@ -113,6 +114,10 @@ void scene_structure::initialize()
 	cylinder.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/polkadot.jpg");
 	mesh rain=create_rain();
 	raindrop.initialize_data_on_gpu(rain);
+	mesh snow;
+	unsigned int index=0;
+	snow=create_snow(0,0,0.0f,0.25f,4,0,&index,snow);
+	snowflake.initialize_data_on_gpu(snow);
 	opengl_shader_structure shader_custom_rain;
 	shader_custom_rain.load(
     project::path + "shaders/mesh/mesh_rain.vert.glsl", 
@@ -151,6 +156,13 @@ void scene_structure::simulation_step(float dt)
 		droplets.push_back({raindrop,vec3{x,y,10},vec3{0,0,0},0.2f});
 		//std::cout<<"1"<<std::endl;
 	}
+	if (dis(gen)<=difficulty*0.1){
+		float sea_w = 8.0;
+		float x= 2*sea_w*dis(gen)-sea_w;
+		float y= 2*sea_w*dis(gen)-sea_w;
+		snowdrops.push_back({snowflake,vec3{x,y,10},vec3{0,0,0},0.2f});
+		//std::cout<<"1"<<std::endl;
+	}
 	for (int i=0;i<droplets.size();i++){
 		droplets.at(i).pos+=droplets.at(i).vel*dt;
 		droplets.at(i).vel.at(0)+=wind.at(0)*dt;
@@ -159,6 +171,16 @@ void scene_structure::simulation_step(float dt)
 		//std::cout<<droplets.at(i).pos.at(2)<<std::endl;
 		if (droplets.at(i).pos.at(2)<0){
 			droplets.erase(droplets.begin()+i);
+			i--;
+		}
+	}
+	for (int i=0;i<snowdrops.size();i++){
+		snowdrops.at(i).pos+=snowdrops.at(i).vel*dt/10;
+		snowdrops.at(i).vel.at(0)+=wind.at(0)*dt;
+		snowdrops.at(i).vel.at(1)+=wind.at(1)*dt;
+		snowdrops.at(i).vel.at(2)-=9.81f*dt;
+		if (snowdrops.at(i).pos.at(2)<0){
+			snowdrops.erase(snowdrops.begin()+i);
 			i--;
 		}
 	}
@@ -260,6 +282,19 @@ void scene_structure::display_frame()
 		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1.0f,1.0f,1.0f};
 		hierarchy["Sphere"].drawable.model.translation={0,0,0};
 	}
+	// int newzoom=(int)((log2(zoom)));
+	// if (newzoom != oldzoom){
+	// 	oldzoom = newzoom;
+	// 	snowflake.clear();
+	// 	unsigned int index=0;
+	// 	mesh snow;
+	// 	int nblayers=4+newzoom;
+	// 	if (nblayers<1){
+	// 		nblayers=1;
+	// 	}
+	// 	snow=create_snow(0,0,5.0f,1.0f,nblayers,0,&index,snow);
+	// 	snowflake.initialize_data_on_gpu(snow);
+	// }
 	vec3 rot;
 		if (state.coor==0){
 			rot={0,-1,0};
@@ -334,6 +369,7 @@ void scene_structure::display_frame()
 		cube.mesh.model.scaling_xyz.at(1)=cube.size*2.0f;
 		draw(cube.mesh, environment);
 	}
+	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -346,8 +382,30 @@ void scene_structure::display_frame()
 		draw(rain.mesh, environment);
 		//std::cout<<"yes"<<std::endl;
 	}
+	for (auto snow:snowdrops){
+		double theta=2*Pi*dis(gen);
+		double phi=2*Pi*dis(gen);
+		vec3 ax={cos(theta),sin(theta)*cos(phi),sin(theta)*cos(phi)};
+		snow.mesh.hierarchy_transform_model.rotation=rotation_transform::from_axis_angle(ax,timer.t/300);
+		snow.mesh.hierarchy_transform_model.translation = snow.pos;
+		draw(snow.mesh, environment);
+		//std::cout<<"yes"<<std::endl;
+	}
+	// if (snowdrops.size()!=0){
+	// 	Obj snow=snowdrops.at(0);
+	// 	double theta=2*Pi*dis(gen);
+	// 	double phi=2*Pi*dis(gen);
+	// 	vec3 ax={cos(theta),sin(theta)*cos(phi),sin(theta)*cos(phi)};
+	// 	//snowflake.hierarchy_transform_model.rotation=rotation_transform::from_axis_angle(ax,timer.t/1000);
+	// 	snowflake.hierarchy_transform_model.translation = snow.pos;
+	// 	draw(snowflake, environment);
+	// }
+	
+
 	glDepthMask(true);
 	glDisable(GL_BLEND);
+	
+	//draw(snowflake,environment);
 }
 
 void scene_structure::display_gui()
@@ -382,7 +440,7 @@ void scene_structure::display_gui()
 		num_scene=1;
 	}
 	bool switching = false;
-	if (!playing || animation){
+	if (!animation){
 	switching=ImGui::Button("Animation");}
 	if (switching){
 		firstvisit=false;

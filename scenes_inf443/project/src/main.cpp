@@ -29,6 +29,7 @@ void initialize_default_shaders();
 void animation_loop();
 
 timer_fps fps_record;
+double oldy=-10000.00;
 
 int main(int, char* argv[])
 {
@@ -208,6 +209,15 @@ void window_size_callback(GLFWwindow*, int width, int height)
 // This function is called everytime the mouse is moved
 void mouse_move_callback(GLFWwindow* /*window*/, double xpos, double ypos)
 {
+	if (oldy==-10000.00){
+		oldy=ypos;
+	}
+	else{
+		if (scene.inputs.mouse.click.right){
+			scene.zoom*=(1+(ypos-oldy)/100.0);
+		}
+		oldy=ypos;
+	}
 	vec2 const pos_relative = scene.window.convert_pixel_to_relative_coordinates({ xpos, ypos });
 	scene.inputs.mouse.position.update(pos_relative);
 	scene.mouse_move_event();
