@@ -274,8 +274,12 @@ void scene_structure::display_frame()
 	hierarchy["Cylinder base"].transform_local.translation = char_pos+vert;
 	if (state.pressed){
 		//hierarchy["Cylinder base"].transform_local.scaling = 1-0.3*(timer.t-state.press_time);
-		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1+0.1*(timer.t-state.press_time),1.0f,1-0.3*(timer.t-state.press_time)};
-		hierarchy["Sphere"].drawable.model.translation={0,0,-0.4*0.3*(timer.t-state.press_time)};
+		float diff=timer.t-state.press_time;
+		if (diff>2.0){
+			diff=2.0;
+		}
+		hierarchy["Cylinder base"].drawable.model.scaling_xyz={1+0.1*diff,1.0f,1-0.3*diff};
+		hierarchy["Sphere"].drawable.model.translation={0,0,-0.4*0.3*diff};
 	}
 	else{
 		//hierarchy["Cylinder base"].transform_local.scaling = 1;
