@@ -100,6 +100,7 @@ struct scene_structure : cgp::scene_inputs_generic {
 	void restart();
 	int find(int dir,float a);
 	void animate(float dt,int dir,float a);
+	void move_camera();
 	mesh_drawable choose_box();
 };
 

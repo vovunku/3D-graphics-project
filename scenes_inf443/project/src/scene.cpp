@@ -55,10 +55,11 @@ void scene_structure::initialize()
 	camera_control.initialize(inputs, window); 
 	camera_control.set_rotation_axis_z(); // camera rotates around z-axis
 	//   look_at(camera_position, targeted_point, up_direction)
-	camera_control.look_at(
-		{ 5.0f, -4.0f, 3.5f } /* position of the camera in the 3D scene */,
-		{0,0,0} /* targeted point in 3D scene */,
-		{0,0,1} /* direction of the "up" vector */);
+	move_camera();
+	// camera_control.look_at(
+	// 	{ 5.0f, -4.0f, 3.5f } /* position of the camera in the 3D scene */,
+	// 	{0,0,0} /* targeted point in 3D scene */,
+	// 	{0,0,1} /* direction of the "up" vector */);
 
 
 	// Create the global (x,y,z) frame
@@ -74,7 +75,7 @@ void scene_structure::initialize()
 	// terrain.initialize_data_on_gpu(terrain_mesh);
 	// terrain.texture.load_and_initialize_texture_2d_on_gpu(project::path + "assets/sand.jpg");
 
-	float sea_w = 8.0;
+	float sea_w = 30.0;
 	int N_terrain_samples = 100;
 	//float terrain_length = 20;
 	mesh terrain_sea=create_sea_terrain_mesh(N_terrain_samples,2*sea_w,0,{0,0});
@@ -124,7 +125,7 @@ void scene_structure::initialize()
     project::path + "shaders/mesh/mesh.frag.glsl");
 	raindrop.shader=shader_custom_rain;
 	mesh_drawable cylinder_base;
-	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 0,0,-0.25 }, { 0,0,0.25f }));
+	cylinder_base.initialize_data_on_gpu(mesh_primitive_cylinder(0.1f, { 0,0,-0.25 }, { 0,0,0.25f }, 100, 200, true));
 	mesh_drawable sphere;
 	sphere.initialize_data_on_gpu(mesh_primitive_sphere(0.1f));
 	hierarchy.add(cylinder_base, "Cylinder base");
@@ -189,6 +190,7 @@ void scene_structure::simulation_step(float dt)
 	for (int i=0;i<3;i++){
 	    char_pos.at(i) = char_pos.at(i) + dt * char_vel.at(i);
 	}
+	move_camera();
 	char_vel.at(state.coor) += wind.at(state.coor) * dt*(char_vel.at(state.coor)-v_min)*(v_max-char_vel.at(state.coor))*char_vel.at(state.coor)*0.0001;
 	if (char_pos.at(2)<0){
 		char_pos.at(2)=0;
@@ -212,7 +214,9 @@ void scene_structure::simulation_step(float dt)
 		point+=streak;
 		cnt+=1;
 		if (!animation){
-		drop_cube();}
+			drop_cube();
+			move_camera();
+		}
 		else{
 			float t=(difficulty+1)*0.1f*dis(gen)*timer.scale+0.5f;
 			state.press_time=timer.t+2.0f*timer.scale;
@@ -230,6 +234,7 @@ void scene_structure::simulation_step(float dt)
 			}
 			float a=t*state.dir;
 			animate(0.01*timer.scale,state.coor,a);
+			move_camera();
 		}}
 		else{
 			playing=false;
@@ -590,3 +595,13 @@ void scene_structure::animate(float dt,int dir,float a){
 
 }
 
+void scene_structure::move_camera()
+{
+	vec3 eye = char_pos;
+	eye.at(0) += 4;
+	eye.at(1) += 1;
+	eye.at(2) = 3;
+	vec3 center = char_pos;
+	center.at(2) = 0;
+	camera_control.look_at(eye, center);
+}
