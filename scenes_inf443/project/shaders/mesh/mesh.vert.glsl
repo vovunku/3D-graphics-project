@@ -23,12 +23,38 @@ uniform mat4 view;  // View matrix (rigid transform) of the camera
 uniform mat4 projection; // Projection (perspective or orthogonal) matrix of the camera
 
 uniform mat4 modelNormal; // Model without scaling used for the normal. modelNormal = transpose(inverse(model))
+uniform float time;
+uniform vec2 wind;
 
+vec3 deformer(vec3 p0)
+{
+	float d = sqrt((p0.x-wind.x*time*0.1)*(p0.x-wind.x*time*0.1)+(p0.y-wind.y*time*0.1)*(p0.y-wind.y*time*0.1));
+	float omega = 20.0*d - 3.0*time;
+
+	vec3 p = vec3(p0.x, p0.y, 0.05*cos(omega) );
+
+	return p;
+}
+
+vec3 deformer_normal(vec3 p0)
+{
+	float d = sqrt((p0.x-wind.x*time*0.1)*(p0.x-wind.x*time*0.1)+(p0.y-wind.y*time*0.1)*(p0.y-wind.y*time*0.1));
+	float omega = 20.0*d - 3.0*time;
+
+	// Compute exact normals after deformation
+	vec3 dpdx = vec3(1.0, 0.0, -20.0*abs(p0.x-wind.x*time*0.1)/d*0.05*sin(omega) );
+	vec3 dpdy = vec3(0.0, 1.0, -20.0*abs(p0.y-wind.y*time*0.1)/d*0.05*sin(omega) );
+	vec3 n = normalize(cross(dpdx,dpdy));
+
+	return n;
+}
 
 
 void main()
 {
 	// The position of the vertex in the world space
+	vec3 p_deformed = deformer(vertex_position);
+	vec3 n_deformed = deformer_normal(vertex_position);
 	vec4 position = model * vec4(vertex_position, 1.0);
 
 	// The normal of the vertex in the world space

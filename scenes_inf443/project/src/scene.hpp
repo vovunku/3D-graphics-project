@@ -3,7 +3,7 @@
 
 #include "cgp/cgp.hpp"
 #include "environment.hpp"
-
+#include <deque>
 // This definitions allow to use the structures: mesh, mesh_drawable, etc. without mentionning explicitly cgp::
 using cgp::mesh;
 using cgp::mesh_drawable;
@@ -13,16 +13,29 @@ using cgp::timer_basic;
 
 // Variables associated to the GUI (buttons, etc)
 struct gui_parameters {
-	bool display_frame = true;
+	bool display_frame = false;
 	bool display_wireframe = false;
 };
 
+enum BoxType {
+	CUBE,
+	CYLINDER,
+	__FIRST = CUBE,
+   	__LAST = CYLINDER
+};
 struct KeyState {
     bool pressed;
     double press_time;
     double release_time;
+	int coor;
+	int dir;
 };
-
+struct Obj {
+	mesh_drawable mesh;
+	vec3 pos;
+	vec3 vel;
+	double size;
+};
 // The structure of the custom scene
 struct scene_structure : cgp::scene_inputs_generic {
 	
@@ -41,33 +54,54 @@ struct scene_structure : cgp::scene_inputs_generic {
 	// ****************************** //
 	// Elements and shapes of the scene
 	// ****************************** //
-
+	int num_scene=1;
 	timer_basic timer;
-
+	std::vector<cgp::vec3> grass_position;
 	mesh_drawable terrain;
 	mesh_drawable water;
+	mesh_drawable grass;
 	mesh_drawable tree;
 	mesh_drawable cube1;
-	mesh_drawable cube2;
+	mesh_drawable cylinder;
+	mesh_drawable raindrop;
+	mesh_drawable snowflake;
 	cgp::hierarchy_mesh_drawable hierarchy;
 	struct KeyState state;
 	vec3 char_pos;
 	vec3 char_vel;
-	
+	const double max=5.0f;
+	double v_max;
+	double v_min;
+	vec2 wind;
+	int cubeat;
+	int point=0;
+	int streak=1;
+	int cnt=0;
+	bool playing=false;
+	bool animation=false;
+	bool firstvisit=true;
+	double zoom=1.0;
+	int oldzoom=0;
 	// ****************************** //
 	// Functions
 	// ****************************** //
-
+	std::deque<Obj> cubes;
+	std::deque<Obj> droplets;
+	std::deque<Obj> snowdrops;
 	void initialize();    // Standard initialization to be called before the animation loop
 	void display_frame(); // The frame display to be called within the animation loop
 	void display_gui();   // The display of the GUI, also called within the animation loop
-	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	void simulation_step(float dt);
 	void mouse_move_event();
 	void mouse_click_event();
 	void keyboard_event();
 	void idle_frame();
-
+	void drop_cube();
+	void restart();
+	int find(int dir,float a);
+	void animate(float dt,int dir,float a);
+	void move_camera();
+	mesh_drawable choose_box();
 };
 
 

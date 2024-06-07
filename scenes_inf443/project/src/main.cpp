@@ -29,6 +29,7 @@ void initialize_default_shaders();
 void animation_loop();
 
 timer_fps fps_record;
+double oldy=-10000.00;
 
 int main(int, char* argv[])
 {
@@ -208,6 +209,15 @@ void window_size_callback(GLFWwindow*, int width, int height)
 // This function is called everytime the mouse is moved
 void mouse_move_callback(GLFWwindow* /*window*/, double xpos, double ypos)
 {
+	if (oldy==-10000.00){
+		oldy=ypos;
+	}
+	else{
+		if (scene.inputs.mouse.click.right){
+			scene.zoom*=(1+(ypos-oldy)/100.0);
+		}
+		oldy=ypos;
+	}
 	vec2 const pos_relative = scene.window.convert_pixel_to_relative_coordinates({ xpos, ypos });
 	scene.inputs.mouse.position.update(pos_relative);
 	scene.mouse_move_event();
@@ -259,15 +269,56 @@ void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, in
 			std::cout << str_pretty(camera_model.matrix_view()) << std::endl;
 
 		}
-		if (action == GLFW_PRESS) {
-        	scene.state.pressed = true;
+		if (scene.char_pos.at(2)<=0 && scene.playing && !scene.state.pressed &&!scene.animation){
+		switch (key){
+			case GLFW_KEY_A:{
+				scene.state.coor=1;
+				scene.state.dir=-1;
+				scene.cubeat=1;
+				//scene.state.pressed = true;
+				break;}
+			case GLFW_KEY_S:
+				{scene.state.coor=0;
+				scene.state.dir=1;
+				scene.cubeat=2;
+				//scene.state.pressed = true;
+				break;}
+				case GLFW_KEY_D:
+				{scene.state.coor=1;
+				scene.state.dir=1;
+				scene.cubeat=3;
+				//scene.state.pressed = true;
+				break;}
+			case GLFW_KEY_W:
+				{scene.state.coor=0;
+				scene.state.dir=-1;
+				scene.cubeat=4;
+				//scene.state.pressed = true;
+				break;}
+			default:{
+				// scene.state.coor=0;
+				scene.state.dir=10;
+				break;}
+			}
+		}
+		if (scene.state.dir!=10 && scene.playing &&!scene.animation){
+		if (action == GLFW_PRESS && !scene.state.pressed) {
+			if (scene.char_vel.at(2)==0 && scene.char_vel.at(1)==0 ){
+        	
         	scene.state.press_time = glfwGetTime();
+			scene.state.pressed = true;
+			}
 		}
 		if (action == GLFW_RELEASE) {
+			if ((key==GLFW_KEY_A && scene.cubeat==1)||(key==GLFW_KEY_S && scene.cubeat==2)||(key==GLFW_KEY_D && scene.cubeat==3)||(key==GLFW_KEY_W && scene.cubeat==4)){
+			if (scene.state.pressed){
         	scene.state.pressed = false;
         	scene.state.release_time = glfwGetTime();
 			scene.char_vel.at(2)+=10.0f*(scene.state.release_time-scene.state.press_time);
-			scene.char_vel.at(1)+=3.0f*(scene.state.release_time-scene.state.press_time);
+			scene.char_vel.at(scene.state.coor)+=3.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;
+			scene.v_max=4.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;
+			scene.v_min=2.0f*(scene.state.release_time-scene.state.press_time)*scene.state.dir;}}
+	}
 	}
 	}
 
